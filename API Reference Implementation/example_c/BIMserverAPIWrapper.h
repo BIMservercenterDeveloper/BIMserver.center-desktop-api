@@ -39,6 +39,10 @@ void BIMserverAPIWrapper_set_login_path(const wchar_t *login_folder);
 
 void BIMserverAPIWrapper_set_language(BIMserverAPILanguage language);
 
+void BIMserverAPIWrapper_set_app_id(const wchar_t *app_id);
+
+void BIMserverAPIWrapper_set_developer_id(const wchar_t *developer_id);
+
 
 // Database...
 
@@ -57,9 +61,9 @@ BIMserverAPIResponse *BIMserverAPIWrapper_get_logged_user_email(void);
 
 BIMserverAPIResponse *BIMserverAPIWrapper_get_logged_user_image(void);
 
-BIMserverAPIResponse *BIMserverAPIWrapper_connect(const wchar_t *user_name, const wchar_t *user_password);
+BIMserverAPIResponse *BIMserverAPIWrapper_do_login(const wchar_t *user_name, const wchar_t *user_password);
 
-BIMserverAPIResponse *BIMserverAPIWrapper_disconnect(void);
+BIMserverAPIResponse *BIMserverAPIWrapper_do_logout(void);
 
 BIMserverAPIResponse *BIMserverAPIWrapper_send_user_recover_password_email(const wchar_t *user_email);
 
@@ -85,6 +89,16 @@ BIMserverAPIResponse *BIMserverAPIWrapper_convert_relative_project_file_path_to_
 
 BIMserverAPIResponse *BIMserverAPIWrapper_exists_updated_file_version_current_project(const wchar_t *relative_file_path_to_project);
 
+// Utilities...
+
+BIMserverAPIResponse *BIMserverAPIWrapper_generate_visualization_file_from_ifc(
+                        const wchar_t *absolute_input_ifc_file_path,
+                        const wchar_t *absolute_output_visualization_file_path);
+
+BIMserverAPIResponse *BIMserverAPIWrapper_generate_and_add_gltf_file_to_ifc(
+                        const wchar_t *absolute_input_ifc_file_path,
+                        const wchar_t *absolute_output_file_path,
+                        const wchar_t *gltf_file_name_without_extension);
 
 #ifdef  __cplusplus
 }

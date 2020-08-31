@@ -81,6 +81,9 @@ namespace BIMserverAPI
 
         private static string bsLanguage = "EN"; // ES, EN, FR, IT, DE
 
+        private static string bsAppID = null;
+        private static string bsDeveloperID = null;
+
         #region API Calls
 
         private const string bsAPICall_create_database = "create_database";
@@ -91,8 +94,8 @@ namespace BIMserverAPI
         private const string bsAPICall_get_logged_user_email = "get_logged_user_email";
         private const string bsAPICall_get_logged_user_image = "get_logged_user_image";
 
-        private const string bsAPICall_connect = "connect";
-        private const string bsAPICall_disconnect = "disconnect";
+        private const string bsAPICall_do_login = "do_login";
+        private const string bsAPICall_do_logout = "do_logout";
         private const string bsAPICall_send_user_recover_password_email = "send_user_recover_password_email";
 
         private const string bsAPICall_select_current_project = "select_current_project";
@@ -106,6 +109,9 @@ namespace BIMserverAPI
 
         private const string bsAPICall_get_file_path_in_current_project = "get_file_path_in_current_project";
         private const string bsAPICall_exists_updated_file_version_current_project = "exists_updated_file_version_current_project";
+
+        private const string bsAPICall_generate_visualization_file_from_ifc = "generate_visualization_file_from_ifc";
+        private const string bsAPICall_generate_and_add_gltf_file_to_ifc = "generate_and_add_gltf_file_to_ifc";
 
         private const string bsAPIResponse_TRUE = "YES";
         private const string bsAPIResponse_FALSE = "NO";
@@ -189,6 +195,29 @@ namespace BIMserverAPI
                 default:        bsLanguage = "EN"; break;
             }
         }
+
+        /// <summary>
+        /// Sets the BIMserver.center application ID.
+        /// 
+        /// This is the ID you get after registering your application on the BIMserver.center platform.
+        /// </summary>
+        /// <param name="app_id"></param>
+        public static void setAppID(string app_id)
+        {
+            bsAppID = app_id;
+        }
+
+        /// <summary>
+        /// Sets the BIMserver.center developer ID.
+        /// 
+        /// This is the ID you get after registering as developer on the BIMserver.center platform.
+        /// </summary>
+        /// <param name="developer_id"></param>
+        public static void setDeveloperID(string developer_id)
+        {
+            bsDeveloperID = developer_id;
+        }
+
         #endregion
 
         #region Database
@@ -225,7 +254,7 @@ namespace BIMserverAPI
         /// <returns></returns>
         public static BIMserverAPIResponse loginForm()
         {
-            string arguments = makeAPICall(bsAPICall_login);
+            string arguments = makeAPICall(bsAPICall_login) + " " + bsAppID + " " + bsDeveloperID;
             return executeAPICallAndGetStatus(arguments, bsAPICall_login, bsLoginFolder);
         }
 
@@ -241,10 +270,10 @@ namespace BIMserverAPI
         /// <param name="userName"></param>
         /// <param name="userPassword"></param>
         /// <returns></returns>
-        public static BIMserverAPIResponse connect(string userName, string userPassword)
+        public static BIMserverAPIResponse do_login(string userName, string userPassword)
         {
-            string arguments = makeAPICall(bsAPICall_connect) + " " + userName + " " + userPassword;
-            return executeAPICallAndGetStatus(arguments, bsAPICall_connect, bsLoginFolder);
+            string arguments = makeAPICall(bsAPICall_do_login) + " " + userName + " " + userPassword + " " + bsAppID + " " + bsDeveloperID;
+            return executeAPICallAndGetStatus(arguments, bsAPICall_do_login, bsLoginFolder);
         }
 
         /// <summary>
@@ -255,10 +284,10 @@ namespace BIMserverAPI
         /// Utility method provided for implementing your own BIMserver.center login form.
         /// </summary>
         /// <returns></returns>
-        public static BIMserverAPIResponse disconnect()
+        public static BIMserverAPIResponse do_logout()
         {
-            string arguments = makeAPICall(bsAPICall_disconnect);
-            return executeAPICallAndGetStatus(arguments, bsAPICall_disconnect, bsLoginFolder);
+            string arguments = makeAPICall(bsAPICall_do_logout);
+            return executeAPICallAndGetStatus(arguments, bsAPICall_do_logout, bsLoginFolder);
         }
 
         /// <summary>
@@ -471,6 +500,36 @@ namespace BIMserverAPI
             string arguments = makeAPICall(bsAPICall_exists_updated_file_version_current_project) + " " + stringEnclosedInQuotes(filePathRelativeToProject);
             return executeAPICallAndGetResponseText(arguments, bsAPICall_exists_updated_file_version_current_project, bsDataBaseFolder);
         }
+        
+        #endregion
+
+        #region "Utilities"
+
+        /// <summary>
+        /// Generates a visualization file for a given IFC file.
+        /// </summary>
+        /// <param name="absoluteInputIFCFilePath"></param>
+        /// <param name="absoluteOutputVisualizationFilePath"></param>
+        /// <returns></returns>
+        public static BIMserverAPIResponse generateVisualizationFileFromIfc(string absoluteInputIFCFilePath, string absoluteOutputVisualizationFilePath)
+        {
+            string arguments = makeAPICall(bsAPICall_generate_visualization_file_from_ifc) + " " + stringEnclosedInQuotes(absoluteInputIFCFilePath) + " " + stringEnclosedInQuotes(absoluteOutputVisualizationFilePath);
+            return executeAPICallAndGetResponseText(arguments, bsAPICall_generate_visualization_file_from_ifc, bsDataBaseFolder);
+        }
+
+        /// <summary>
+        /// Generates a GLTF for a given IFC file and outputs a new IFC file with the new file attached according to BIMserver.center associated file rules.
+        /// </summary>
+        /// <param name="absoluteInputIFCFilePath"></param>
+        /// <param name="absoluteOutputIFCFilePath"></param>
+        /// <param name="gltfFileNameWithoutExtension"></param>
+        /// <returns></returns>
+        public static BIMserverAPIResponse generateAndAddGLTFFileToIFC(string absoluteInputIFCFilePath, string absoluteOutputIFCFilePath, string gltfFileNameWithoutExtension)
+        {
+            string arguments = makeAPICall(bsAPICall_generate_visualization_file_from_ifc) + " " + stringEnclosedInQuotes(absoluteInputIFCFilePath) + " " + stringEnclosedInQuotes(absoluteOutputIFCFilePath) + " " + stringEnclosedInQuotes(gltfFileNameWithoutExtension);
+            return executeAPICallAndGetResponseText(arguments, bsAPICall_generate_and_add_gltf_file_to_ifc, bsDataBaseFolder);
+        }
+
         #endregion
 
         #region API invocation
@@ -490,6 +549,15 @@ namespace BIMserverAPI
             return executeAPICallAndProcessResponse(arguments, apiCall, api_response_folder, get_another_line_for_true_response);
         }
 
+        private static void checkDeveloperParameters()
+        {
+            if (bsAppID == null || bsDeveloperID == null)
+            {
+                MessageBox.Show("Application or developer ID not set. Check Main on Program.cs");
+                Environment.Exit(-1);
+            }
+        }
+
         private static BIMserverAPIResponse executeAPICallAndProcessResponse(
                         string arguments,
                         string apiCall, 
@@ -497,6 +565,8 @@ namespace BIMserverAPI
                         bool get_another_line_for_true_response)
         {
             BIMserverAPIResponse response;
+
+            checkDeveloperParameters();
 
             try
             {

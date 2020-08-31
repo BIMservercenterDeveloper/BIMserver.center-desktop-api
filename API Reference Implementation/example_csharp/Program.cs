@@ -49,6 +49,10 @@ namespace example_csharp
                 BIMserverAPIWrapper.setDatabasePath("c:\\BIMserver.center api demo");
                 BIMserverAPIWrapper.setLoginPath("c:\\BIMserver.center api demo");
 
+                // This values must be set. You'll get them after registration.
+                //BIMserverAPIWrapper.setAppID("app_undefined_id");
+                //BIMserverAPIWrapper.setDeveloperID("app_developer_id");
+
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new TestApi());

@@ -920,6 +920,10 @@ static void i_initialize_bimserver_api(void)
     BIMserverAPIWrapper_set_language(BIMserverAPILanguage_ENGLISH);
     BIMserverAPIWrapper_set_database_path(L"c:\\BIMserver.center api demo");
     BIMserverAPIWrapper_set_login_path(L"c:\\BIMserver.center api demo");
+
+// This values must be set. You'll get them after registration.
+    //BIMserverAPIWrapper_set_app_id(L"<undefined_app_id>");
+    //BIMserverAPIWrapper_set_developer_id(L"<undefined_developer_id>");
 }
 
 // ----------------------------------------------------------------------------------------------------

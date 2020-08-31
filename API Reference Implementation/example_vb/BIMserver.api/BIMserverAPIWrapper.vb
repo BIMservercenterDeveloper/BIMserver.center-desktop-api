@@ -40,6 +40,8 @@ Namespace BIMserverAPIVB
         Private bsDataBaseFolder As String = Nothing
         Private bsLoginFolder As String = Nothing
         Private bsLanguage As String = "EN" 'ES, EN, FR, IT, DE
+        Private bsAppID As String = Nothing
+        Private bsDeveloperID As String = Nothing
 
 #Region "API Calls"
         Private Const bsAPICall_create_database As String = "create_database"
@@ -50,8 +52,8 @@ Namespace BIMserverAPIVB
         Private Const bsAPICall_get_logged_user_email As String = "get_logged_user_email"
         Private Const bsAPICall_get_logged_user_image As String = "get_logged_user_image"
 
-        Private Const bsAPICall_connect As String = "connect"
-        Private Const bsAPICall_disconnect As String = "disconnect"
+        Private Const bsAPICall_do_login As String = "do_login"
+        Private Const bsAPICall_do_logout As String = "do_logout"
         Private Const bsAPICall_send_user_recover_password_email As String = "send_user_recover_password_email"
 
         Private Const bsAPICall_select_current_project As String = "select_current_project"
@@ -65,6 +67,9 @@ Namespace BIMserverAPIVB
 
         Private Const bsAPICall_get_file_path_in_current_project As String = "get_file_path_in_current_project"
         Private Const bsAPICall_exists_updated_file_version_current_project As String = "exists_updated_file_version_current_project"
+
+        Private Const bsAPICall_generate_visualization_file_from_ifc As String = "generate_visualization_file_from_ifc"
+        Private Const bsAPICall_generate_and_add_gltf_file_to_ifc As String = "generate_and_add_gltf_file_to_ifc"
 
         Private Const bsAPIResponse_TRUE As String = "YES"
         Private Const bsAPIResponse_FALSE As String = "NO"
@@ -137,6 +142,12 @@ Namespace BIMserverAPIVB
 
             End Select
         End Sub
+        Public Sub setAppID(ByVal app_id As String)
+            bsAppID = app_id
+        End Sub
+        Public Sub setDeveloperID(ByVal developer_id As String)
+            bsDeveloperID = developer_id
+        End Sub
 
 #End Region
 
@@ -157,18 +168,18 @@ Namespace BIMserverAPIVB
         End Function
 
         Public Function loginForm() As BIMserverAPIResponse
-            Dim arguments As String = makeAPICall(bsAPICall_login)
+            Dim arguments As String = makeAPICall(bsAPICall_login) + " " + bsAppID + " " + bsDeveloperID
             Return executeAPICallAndGetStatus(arguments, bsAPICall_login, bsLoginFolder)
         End Function
 
         Public Function connect(ByVal userName As String, ByVal userPassword As String) As BIMserverAPIResponse
-            Dim arguments As String = makeAPICall(bsAPICall_connect) + " " + userName + " " + userPassword
-            Return executeAPICallAndGetStatus(arguments, bsAPICall_connect, bsLoginFolder)
+            Dim arguments As String = makeAPICall(bsAPICall_do_login) + " " + userName + " " + userPassword + " " + bsAppID + " " + bsDeveloperID
+            Return executeAPICallAndGetStatus(arguments, bsAPICall_do_login, bsLoginFolder)
         End Function
 
         Public Function disconnect() As BIMserverAPIResponse
-            Dim arguments As String = makeAPICall(bsAPICall_disconnect)
-            Return executeAPICallAndGetStatus(arguments, bsAPICall_disconnect, bsLoginFolder)
+            Dim arguments As String = makeAPICall(bsAPICall_do_logout)
+            Return executeAPICallAndGetStatus(arguments, bsAPICall_do_logout, bsLoginFolder)
         End Function
 
         Public Function sendUserRecoverPassword(ByVal userEmail As String) As BIMserverAPIResponse
@@ -261,6 +272,20 @@ Namespace BIMserverAPIVB
 
 #End Region
 
+#Region "Utilities"
+
+        Public Function generateVisualizationFileFromIfc(ByVal absoluteInputIFCFilePath As String, ByVal absoluteOutputVisualizationFilePath As String) As BIMserverAPIResponse
+            Dim arguments As String = makeAPICall(bsAPICall_generate_visualization_file_from_ifc) + " " + stringEnclosedInQuotes(absoluteInputIFCFilePath) + " " + stringEnclosedInQuotes(absoluteOutputVisualizationFilePath)
+            Return executeAPICallAndGetStatus(arguments, bsAPICall_generate_visualization_file_from_ifc, bsDataBaseFolder)
+        End Function
+
+        Public Function generateAndAddGLTFFileToIFC(ByVal absoluteInputIFCFilePath As String, ByVal absoluteOutputIFCFilePath As String, ByVal gltfFileNameWithoutExtension As String) As BIMserverAPIResponse
+            Dim arguments As String = makeAPICall(bsAPICall_generate_visualization_file_from_ifc) + " " + stringEnclosedInQuotes(absoluteInputIFCFilePath) + " " + stringEnclosedInQuotes(absoluteOutputIFCFilePath) + " " + stringEnclosedInQuotes(gltfFileNameWithoutExtension)
+            Return executeAPICallAndGetStatus(arguments, bsAPICall_generate_and_add_gltf_file_to_ifc, bsDataBaseFolder)
+        End Function
+
+#End Region
+
 #Region "API invocation"
 
         Private Function executeAPICallAndGetStatus(ByVal arguments As String, ByVal apiCall As String, ByVal apiResponseFolder As String) As BIMserverAPIResponse
@@ -276,10 +301,18 @@ Namespace BIMserverAPIVB
             Return executeAPICallAndProcessResponse(arguments, apiCall, apiResponseFolder, get_another_line_for_true_response)
 
         End Function
+        Private Sub checkDeveloperParameters()
+            If (bsAppID = Nothing Or bsDeveloperID = Nothing) Then
+                MsgBox("Application or developer ID not set. Check example_vb_Load on example_vb.vb")
+                Environment.Exit(-1)
+            End If
+        End Sub
 
         Private Function executeAPICallAndProcessResponse(ByVal arguments As String, ByVal apiCall As String, ByVal apiResponseFolder As String, ByVal get_another_line_for_true_response As Boolean) As BIMserverAPIResponse
 
             Dim response As BIMserverAPIResponse
+
+            checkDeveloperParameters()
 
             Try
                 Call BIMserverAPIWrapper.executeApiCall(arguments, apiResponseFolder)

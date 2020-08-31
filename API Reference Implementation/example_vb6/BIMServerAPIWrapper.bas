@@ -62,6 +62,8 @@ Private Const bsAPICall_put_associated_file_in_current_project As String = "put_
 Private Const bsAPICall_get_file_path_in_current_project As String = "get_file_path_in_current_project"
 Private Const bsAPICall_exists_updated_file_version_current_project As String = "exists_updated_file_version_current_project"
 
+Private Const bsAPICall_generate_visualization_file_from_ifc As String = "generate_visualization_file_from_ifc"
+
 'Return code values
 Private Const bsAPIResponse_TRUE As String = "YES"
 Private Const bsAPIResponse_FALSE As String = "NO"
@@ -111,13 +113,13 @@ Private Type STARTUPINFO
         hStdError As Long
 End Type
 
-Type SECURITY_ATTRIBUTES
-        nLength As Long
-        lpSecurityDescriptor As Long
-        bInheritHandle As Long
-End Type
- 
-Private Declare Function CreateProcess Lib "kernel32" Alias "CreateProcessA" (ByVal lpApplicationName As String, ByVal lpCommandLine As String, lpProcessAttributes As SECURITY_ATTRIBUTES, lpThreadAttributes As SECURITY_ATTRIBUTES, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, lpEnvironment As Any, ByVal lpCurrentDriectory As String, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
+Private Declare Function CreateProcessA Lib "kernel32.dll" (ByVal lpApplicationName As Long, ByVal lpCommandLine As _
+String, ByVal lpProcessAttributes As Long, ByVal _
+lpThreadAttributes As Long, ByVal bInheritHandles As Long, _
+ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, _
+ByVal lpCurrentDirectory As Long, lpStartupInfo As _
+STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
+
 Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
 
 ' Windows API for Register
@@ -351,6 +353,14 @@ Public Function existsUpdatedFileVersion(ByVal filePathRelativeToProject As Stri
     Set existsUpdatedFileVersion = executeAPICallAndGetStatus(arguments, bsAPICall_exists_updated_file_version_current_project, bsDataBaseFolder)
 End Function
 
+Public Function generateVisualizationFileFromIfc(ByVal absoluteInputIFCFilePath As String, ByVal absoluteOutputVisualizationFilePath As String) As BIMserverAPIResponse
+    Dim arguments As String
+    
+    arguments = makeAPICall(bsAPICall_generate_visualization_file_from_ifc) + " " + stringEnclosedInQuotes(absoluteInputIFCFilePath) + " " + stringEnclosedInQuotes(absoluteOutputVisualizationFilePath)
+    Set generateVisualizationFileFromIfc = executeAPICallAndGetStatus(arguments, bsAPICall_generate_visualization_file_from_ifc, bsDataBaseFolder)
+End Function
+
+
 ' BIMServer API Invocation
 Private Function makeTrueResponse() As BIMserverAPIResponse
     Dim response As New BIMserverAPIResponse
@@ -503,26 +513,25 @@ Private Function executeAPICAll(ByVal apiParameters As String, _
     Dim bsApiExecutablePath As String
     Dim command As String
     Dim parameters As String
+    Dim commandLine As String
     Dim pclass As Long
     Dim sinfo As STARTUPINFO
     Dim pinfo As PROCESS_INFORMATION
-    Dim sec1 As SECURITY_ATTRIBUTES
-    Dim sec2 As SECURITY_ATTRIBUTES
     Dim res As Integer
     
     bsApiExecutablePath = getApiExecutablePath()
-    command = bsApiExecutablePath & "\" & bsApiExecutableName
-    parameters = parameters & " " & getLanguageParameter
+    command = stringEnclosedInQuotes(bsApiExecutablePath & "\" & bsApiExecutableName)
+    parameters = getLanguageParameter
     parameters = parameters & " " & getWorkingDirectoryParameter(apiResponseFolder)
     parameters = parameters & " " & apiParameters
     parameters = parameters & " " & getDebugParameter()
     
-    sec1.nLength = Len(sec1)
-    sec2.nLength = Len(sec2)
+    commandLine = command & " " & parameters
+    
     sinfo.cb = Len(sinfo)
     
     pclass = CREATE_DEFAULT_ERROR_MODE Or NORMAL_PRIORITY_CLASS Or CREATE_NO_WINDOW
-    res = CreateProcess(command, parameters, sec1, sec2, False, pclass, 0&, bsApiExecutablePath, sinfo, pinfo)
+    res = CreateProcessA(0&, commandLine, 0&, 0&, False, pclass, 0&, 0&, sinfo, pinfo)
     
     If res = 0 Then
         executeAPICAll = False

@@ -36,6 +36,10 @@ Public Class example_vb
             BIMserverAPIWrapper.setLanguage(BIMserverAPILanguage.ENGLISH)
             BIMserverAPIWrapper.setDatabasePath("c:\BIMserver.center api demo")
             BIMserverAPIWrapper.setLoginPath("c:\BIMserver.center api demo")
+
+            'This values must be set. You'll get them after registration.
+            'BIMserverAPIWrapper.setAppID("app_undefined_id")
+            'BIMserverAPIWrapper.setDeveloperID("app_developer_id")
         End If
     End Sub
 

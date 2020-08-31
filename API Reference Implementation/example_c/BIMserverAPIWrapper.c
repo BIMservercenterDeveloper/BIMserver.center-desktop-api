@@ -34,6 +34,8 @@ static const wchar_t *bsApiExecutableName = L"bsapicmdln.exe";
 
 static wchar_t *bsDataBaseFolder = NULL;
 static wchar_t *bsLoginFolder = NULL;
+static wchar_t *bsAppId = NULL;
+static wchar_t *bsDeveloperId = NULL;
 
 static const wchar_t *bsLanguage_SPANISH = L"ES";
 static const wchar_t *bsLanguage_ENGLISH = L"EN";
@@ -50,8 +52,8 @@ static const wchar_t *bsAPICall_get_logged_user_name = L"get_logged_user_name";
 static const wchar_t *bsAPICall_get_logged_user_email = L"get_logged_user_email";
 static const wchar_t *bsAPICall_get_logged_user_image = L"get_logged_user_image";
 
-static const wchar_t *bsAPICall_connect = L"connect";
-static const wchar_t *bsAPICall_disconnect = L"disconnect";
+static const wchar_t *bsAPICall_do_login = L"do_login";
+static const wchar_t *bsAPICall_do_logout = L"do_logout";
 static const wchar_t *bsAPICall_send_user_recover_password_email = L"send_user_recover_password_email";
 
 static const wchar_t *bsAPICall_select_current_project = L"select_current_project";
@@ -65,6 +67,9 @@ static const wchar_t *bsAPICall_put_associated_file_in_current_project = L"put_a
 
 static const wchar_t *bsAPICall_get_file_path_in_current_project = L"get_file_path_in_current_project";
 static const wchar_t *bsAPICall_exists_updated_file_version_current_project = L"exists_updated_file_version_current_project";
+
+static const wchar_t *bsAPICall_generate_visualization_file_from_ifc = L"generate_visualization_file_from_ifc";
+static const wchar_t *bsAPICall_generate_and_add_gltf_file_to_ifc = L"generate_and_add_gltf_file_to_ifc";
 
 static const wchar_t *bsAPIResponse_TRUE = L"YES";
 static const wchar_t *bsAPIResponse_FALSE = L"NO";
@@ -161,6 +166,26 @@ void BIMserverAPIWrapper_set_language(BIMserverAPILanguage language)
         case BIMserverAPILanguage_DEUSTCH:  bsLanguage = bsLanguage_DEUSTCH; break;
         default:                            bsLanguage = bsLanguage_ENGLISH; break;
     }
+}
+
+// ----------------------------------------------------------------------------
+
+void BIMserverAPIWrapper_set_app_id(const wchar_t *app_id)
+{
+    if (bsAppId != NULL)
+        free(bsAppId);
+
+    bsAppId = _wcsdup(app_id);
+}
+
+// ----------------------------------------------------------------------------
+
+void BIMserverAPIWrapper_set_developer_id(const wchar_t *developer_id)
+{
+    if (bsDeveloperId != NULL)
+        free(bsDeveloperId);
+
+    bsDeveloperId = _wcsdup(developer_id);
 }
 
 // ----------------------------------------------------------------------------
@@ -451,6 +476,17 @@ static wchar_t *i_read_text_line(FILE *file)
 
 // ----------------------------------------------------------------------------------------------------
 
+static void i_check_developer_id(void)
+{
+    if (bsAppId == NULL || bsDeveloperId == NULL)
+    {
+        (void)MessageBoxW(NULL, L"Application or developer ID not set. Check i_initialize_bimserver_api() on example_c.c", L"", MB_OK);
+        exit(-1);
+    }
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 static BIMserverAPIResponse *i_execute_api_call_and_get_results(
                         wchar_t **api_call_with_arguments, 
                         const wchar_t *api_name, 
@@ -461,6 +497,8 @@ static BIMserverAPIResponse *i_execute_api_call_and_get_results(
     wchar_t *error_message;
 
     assert(api_call_with_arguments != NULL && *api_call_with_arguments != NULL);
+
+    i_check_developer_id();
 
     if (i_did_execute_process(*api_call_with_arguments, api_response_folder, &error_message) == FALSE)
     {
@@ -560,7 +598,7 @@ static BIMserverAPIResponse *i_execute_api_call_and_get_status_plus_yes_response
 
 // ----------------------------------------------------------------------------------------------------
 
-static wchar_t *i_make_api_command_withoud_arguments(const wchar_t *api_call)
+static wchar_t *i_make_api_command_without_arguments(const wchar_t *api_call)
 {
     return i_make_string_with_format(L"-%s", api_call);
 }
@@ -581,6 +619,22 @@ static wchar_t *i_make_api_command_2_arguments(const wchar_t *api_call, const wc
 
 // ----------------------------------------------------------------------------------------------------
 
+static wchar_t *i_make_api_command_3_arguments(const wchar_t *api_call, const wchar_t *argument1, const wchar_t *argument2, const wchar_t *argument3)
+{
+    return i_make_string_with_format(L"-%s %s %s %s", api_call, argument1, argument2, argument3);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+static wchar_t *i_make_api_command_4_arguments(
+                        const wchar_t *api_call, 
+                        const wchar_t *argument1, const wchar_t *argument2, const wchar_t *argument3, const wchar_t *argument4)
+{
+    return i_make_string_with_format(L"-%s %s %s %s %s", api_call, argument1, argument2, argument3, argument4);
+}
+
+// ----------------------------------------------------------------------------------------------------
+
 static wchar_t *i_make_api_command_5_arguments(
                         const wchar_t *api_call, 
                         const wchar_t *argument1, const wchar_t *argument2, const wchar_t *argument3, 
@@ -595,7 +649,7 @@ BIMserverAPIResponse *BIMserverAPIWrapper_create_database(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_create_database);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_create_database);
     return i_execute_api_call_and_get_status(&api_call_with_arguments, bsAPICall_create_database, bsDataBaseFolder);
 }
 
@@ -605,7 +659,7 @@ BIMserverAPIResponse *BIMserverAPIWrapper_is_logged(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_is_logged);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_is_logged);
     return i_execute_api_call_and_get_status(&api_call_with_arguments, bsAPICall_is_logged, bsLoginFolder);
 }
 
@@ -615,7 +669,9 @@ BIMserverAPIResponse *BIMserverAPIWrapper_loginForm(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_login);
+    i_check_developer_id();
+
+    api_call_with_arguments = i_make_api_command_2_arguments(bsAPICall_login, bsAppId, bsDeveloperId);
     return i_execute_api_call_and_get_status(&api_call_with_arguments, bsAPICall_login, bsLoginFolder);
 }
 
@@ -625,7 +681,7 @@ BIMserverAPIResponse *BIMserverAPIWrapper_get_logged_user_name(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_get_logged_user_name);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_get_logged_user_name);
     return i_execute_api_call_and_get_status_plus_yes_response(&api_call_with_arguments, bsAPICall_get_logged_user_name, bsLoginFolder);
 }
 
@@ -635,7 +691,7 @@ BIMserverAPIResponse *BIMserverAPIWrapper_get_logged_user_email(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_get_logged_user_email);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_get_logged_user_email);
     return i_execute_api_call_and_get_status_plus_yes_response(&api_call_with_arguments, bsAPICall_get_logged_user_email, bsLoginFolder);
 }
 
@@ -645,28 +701,30 @@ BIMserverAPIResponse *BIMserverAPIWrapper_get_logged_user_image(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_get_logged_user_image);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_get_logged_user_image);
     return i_execute_api_call_and_get_status_plus_yes_response(&api_call_with_arguments, bsAPICall_get_logged_user_image, bsLoginFolder);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-BIMserverAPIResponse *BIMserverAPIWrapper_connect(const wchar_t *user_name, const wchar_t *user_password)
+BIMserverAPIResponse *BIMserverAPIWrapper_do_login(const wchar_t *user_name, const wchar_t *user_password)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_2_arguments(bsAPICall_connect, user_name, user_password);
-    return i_execute_api_call_and_get_status(&api_call_with_arguments, bsAPICall_connect, bsLoginFolder);
+    i_check_developer_id();
+
+    api_call_with_arguments = i_make_api_command_4_arguments(bsAPICall_do_login, user_name, user_password, bsAppId, bsDeveloperId);
+    return i_execute_api_call_and_get_status(&api_call_with_arguments, bsAPICall_do_login, bsLoginFolder);
 }
 
 // ----------------------------------------------------------------------------------------------------
 
-BIMserverAPIResponse *BIMserverAPIWrapper_disconnect(void)
+BIMserverAPIResponse *BIMserverAPIWrapper_do_logout(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_disconnect);
-    return i_execute_api_call_and_get_status(&api_call_with_arguments, bsAPICall_disconnect, bsLoginFolder);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_do_logout);
+    return i_execute_api_call_and_get_status(&api_call_with_arguments, bsAPICall_do_logout, bsLoginFolder);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -685,7 +743,7 @@ BIMserverAPIResponse *BIMserverAPIWrapper_select_current_project(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_select_current_project);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_select_current_project);
 
     return i_execute_api_call_and_get_status_plus_yes_response(
                         &api_call_with_arguments, 
@@ -699,7 +757,7 @@ BIMserverAPIResponse *BIMserverAPIWrapper_get_current_project_path(void)
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_get_current_project_path);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_get_current_project_path);
 
     return i_execute_api_call_and_get_status_plus_yes_response(
                         &api_call_with_arguments, 
@@ -713,7 +771,7 @@ BIMserverAPIResponse *BIMserverAPIWrapper_select_ifc_file_from_current_project(v
 {
     wchar_t *api_call_with_arguments;
 
-    api_call_with_arguments = i_make_api_command_withoud_arguments(bsAPICall_select_ifc_file_from_current_project);
+    api_call_with_arguments = i_make_api_command_without_arguments(bsAPICall_select_ifc_file_from_current_project);
 
     return i_execute_api_call_and_get_status_plus_yes_response(
                         &api_call_with_arguments, 
@@ -859,6 +917,62 @@ BIMserverAPIResponse *BIMserverAPIWrapper_exists_updated_file_version_current_pr
                         bsDataBaseFolder);
 
     free(relative_file_path_parameter);
+
+    return response;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+BIMserverAPIResponse *BIMserverAPIWrapper_generate_visualization_file_from_ifc(
+                        const wchar_t *absolute_input_ifc_file_path,
+                        const wchar_t *absolute_output_visualization_file_path)
+{
+    BIMserverAPIResponse *response;
+    wchar_t *input_file_parameter, *output_file_parameter;
+    wchar_t *api_call_with_arguments; 
+
+    input_file_parameter = i_file_path_parameter(absolute_input_ifc_file_path);
+    output_file_parameter = i_file_path_parameter(absolute_output_visualization_file_path);
+    api_call_with_arguments = i_make_api_command_2_arguments(bsAPICall_generate_visualization_file_from_ifc, input_file_parameter, output_file_parameter);
+
+    response = i_execute_api_call_and_get_status(
+                        &api_call_with_arguments, 
+                        bsAPICall_generate_visualization_file_from_ifc, 
+                        bsDataBaseFolder);
+
+    free(input_file_parameter);
+    free(output_file_parameter);
+    free(api_call_with_arguments);
+
+    return response;
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+BIMserverAPIResponse *BIMserverAPIWrapper_generate_and_add_gltf_file_to_ifc(
+                        const wchar_t *absolute_input_ifc_file_path,
+                        const wchar_t *absolute_output_file_path,
+                        const wchar_t *gltf_file_name_without_extension)
+{
+    BIMserverAPIResponse *response;
+    wchar_t *input_file_parameter, *output_file_parameter, *output_gltf_file_name_parameter;
+    wchar_t *api_call_with_arguments; 
+
+    input_file_parameter = i_file_path_parameter(absolute_input_ifc_file_path);
+    output_file_parameter = i_file_path_parameter(absolute_output_file_path);
+    output_gltf_file_name_parameter = i_file_path_parameter(gltf_file_name_without_extension);
+
+    api_call_with_arguments = i_make_api_command_3_arguments(bsAPICall_generate_and_add_gltf_file_to_ifc, input_file_parameter, output_file_parameter, output_gltf_file_name_parameter);
+
+    response = i_execute_api_call_and_get_status(
+                        &api_call_with_arguments, 
+                        bsAPICall_generate_and_add_gltf_file_to_ifc, 
+                        bsDataBaseFolder);
+
+    free(input_file_parameter);
+    free(output_file_parameter);
+    free(output_gltf_file_name_parameter);
+    free(api_call_with_arguments);
 
     return response;
 }
