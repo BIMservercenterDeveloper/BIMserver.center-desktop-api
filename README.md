@@ -7,7 +7,7 @@ This repository contains a working implementation that you can use as a starting
 
 To start integrating your desktop software with the platform, please, follow this steps:
 
-  1. Create a free developer account if you don't have one by [clicking here](https://business.bimserver.center) to get your developer and application ID.
+  1. Create a free developer account if you don't have one by [clicking here](https://business.bimserver.center/en/for_developers_api) to get your developer and application ID.
   2. Create a free user account if you don't have one by [clicking here](https://bimserver.center) to manage bim projects and collaborate with others.
   3. Download and install the [BIMserver.center synchronizer](http://downloads.bimserver.center/bimserver_center.zip)
   4. Download a copy of this repository, read the documentation and play with the code provided.
